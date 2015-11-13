@@ -1,25 +1,26 @@
 {
-  "name": "fis3-jello",
-  "version": "1.0.4",
-  "description": "fis3 jello",
+  "name": "mtt-jello",
+  "version": "0.0.2",
+  "description": "mtt jello forked from fis3 jello",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fex-team/fis3-jello.git"
+    "url": "https://github.com/TCL-MIE-CD/mtt-jello.git"
   },
   "keywords": [
+    "mtt",
     "fis3",
     "jello"
   ],
-  "author": "fis",
-  "license": "BSD",
+  "author": "",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fex-team/fis3-jello/issues"
+    "url": "https://github.com/TCL-MIE-CD/mtt-jello/issues"
   },
-  "homepage": "https://github.com/fex-team/fis3-jello",
+  "homepage": "https://github.com/TCL-MIE-CD/mtt-jello",
   "dependencies": {
     "fis-parser-less": "0.1.3",
     "fis-parser-utc": "0.0.2",

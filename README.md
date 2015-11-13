@@ -1,3 +1,6 @@
+> mtt-jello是基于fis3-jello修改的，使其符合MTT的J2EE项目的前端目录规范。
+  这里的文档待补充
+
 # fis3-jello
 
 基于 fis3 针对 jsp/velocity 模板的前端工程解决方案。

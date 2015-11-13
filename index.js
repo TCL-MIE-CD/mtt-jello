@@ -16,53 +16,42 @@ var exports = module.exports = function(fis) {
   // fis3 server start 可以不指定 type.
   fis.set('server.type', 'jello');
 
-  // 挂载 commonJs 模块化插件。
-  // 
-  // 如果要使用 amd 方案，请先执行
-  // fis.unhook('commonjs');
-  // 然后再执行 fis.hook('amd');
-  // 多个模块化方案插件不能共用。
-  fis.hook('commonjs');
-
+  // 开发环境配置
   fis
 
-    // 对 less 文件默认支持。
-    .match('*.less', {
-      parser: fis.plugin('less'),
-      rExt: '.css'
+    // 挂载 amd 模块化插件。
+    //
+    // 如果要使用 amd 方案，请先执行
+    // fis.unhook('amd');
+    // 然后再执行 fis.hook('commonjs');
+    // 多个模块化方案插件不能共用。
+    .hook('amd', {
+      packages: []
     }, weight)
 
-    // 对 sass 文件默认支持。
-    /*.match('*.{sass,scss}', {
-      parser: fis.plugin('sass'),
-      rExt: '.css'
-    }, weight)*/
+    // 忽略目录和文件
+    .set('project.ignore', [
+      'node_modules/**',
+      '.idea/**',
+      '.git/**',
+      'mtt-conf.js'
+    ], weight)
 
-    // 对 tmpl 文件，默认采用 utc 插件转换成 js 函数。
-    .match('*.tmpl', {
-      parser: fis.plugin('utc'),
-      rExt: '.js'
-    }, weight)
-
-    // 对 vm 和 jsp 进行语言识别。
-    .match('*.{vm,jsp}', {
-      preprocessor: fis.plugin('extlang')
-    }, weight)
-
+    // 开发环境下都不加md5
     // 所有文件默认放 static 目录下面。
     // 后续会针对部分文件覆盖此配置。
     .match('**', {
       release: '${statics}/${namespace}/$0'
     }, weight)
 
-    // 标记 components 、 page 和 widget 目录下面的 js 都是模块。
-    .match('/{components,page,widget}/**.js', {
-      isMod: true
-    }, weight)
-
     // static 下面的文件直接发布到 $statics 目录。
     // 为了不多一层目录 static。
     .match('/static/(**)', {
+      release: '${statics}/${namespace}/$1',
+      isMod: false
+    }, weight)
+
+    .match('/src/(**)', {
       release: '${statics}/${namespace}/$1'
     }, weight)
 
@@ -73,19 +62,58 @@ var exports = module.exports = function(fis) {
       useCompile: false
     }, weight)
 
-    .match('/widget/**.{jsp,vm,html}', {
-      url: '$0',
-      release: '${templates}/${namespace}/$0',
-      isMod: true
+    // 页面配置，为了防止有两层view，这里去掉一层
+    .match(/^\/views\/(.*\.(jsp|vm|html))$/i, {
+      isMod: true,
+      url: '$1',
+      release: '${templates}/${namespace}/$1'
     }, weight)
 
-    .match('/page/**.{jsp,vm,html}', {
-      isMod: true,
-      url: '$0',
-      release: '${templates}/${namespace}/$0',
+    //page标记为isPage
+    .match('/views/page/**.{jsp,vm,html}', {
       extras: {
         isPage: true
       }
+    }, weight)
+
+    // components目录下标记为模块化
+    .match('/components/**', {
+      isMod: true
+    }, weight)
+
+
+    // 标记src下的js/es6/jsx
+    .match('/src/(**.{js,es6,jsx})', {
+      parser: fis.plugin('es6-babel', {
+        //去掉严格模式，防止前端内联模版使用with时报错，参考：https://github.com/babel/babel/issues/388
+        //blacklist: ["useStrict"]
+      }),
+      //release: '${statics}/${namespace}/$1',
+      isMod: true,
+      rExt: '.js'
+    }, weight)
+
+    // 对 less 文件默认支持。
+    .match('*.less', {
+      parser: fis.plugin('less'),
+      rExt: '.css',
+      useSprite: true
+    }, weight)
+
+    // src下的less部署到statics下
+    //.match('/src/(**.{svg,tif,tiff,wbmp,png,bmp,fax,gif,ico,jfif,jpe,jpeg,jpg,woff,cur})', {
+    //  release: '${statics}/${namespace}/$1'
+    //}, weight)
+
+    // 默认使用arttemplate模版
+    .match('/src/**.tmpl', {
+      parser: fis.plugin('art-tmpl'),
+      rExt: '.js'
+    }, weight)
+
+    // 对 vm 和 jsp 进行语言识别。
+    .match('*.{vm,jsp}', {
+      preprocessor: fis.plugin('extlang')
     }, weight)
 
     .match('{map.json,${namespace}-map.json}', {
@@ -99,10 +127,15 @@ var exports = module.exports = function(fis) {
 
     .match('server.conf', {
       release: '/WEB-INF/server${namespace}.conf'
-    })
+    }, weight)
 
     .match('VM_global_library.vm', {
       release: '/${templates}/VM_global_library.vm'
+    }, weight)
+
+    // md不产出
+    .match('*.md', {
+      release: false
     }, weight)
 
     // _ 下划线打头的都是不希望被产出的文件。
@@ -114,6 +147,7 @@ var exports = module.exports = function(fis) {
     .match('**.{sh,bat}', {
       release: false
     }, weight)
+
 
     // 自动产出 map.json
     .match('::package', {
@@ -128,23 +162,23 @@ var exports = module.exports = function(fis) {
       }
     }, weight);
 
+
   // 在 prod 环境下，开启各种压缩和打包。
   fis
     .media('prod')
 
-    .match('*.js', {
+    .match('*.{js,jsx,es6}', {
       optimizer: fis.plugin('uglify-js')
     }, weight)
 
-    .match('*.css', {
-      optimizer: fis.plugin('clean-css')
+    .match('*.{css,less}', {
+      optimizer: fis.plugin('clean-css'),
     }, weight)
 
     .match('*.png', {
       optimizer: fis.plugin('png-compressor')
     }, weight);
 
-  
   // 当用户 fis-conf.js 加载后触发。
   fis.on('conf:loaded', function() {
     if (!fis.get('namespace'))return;
