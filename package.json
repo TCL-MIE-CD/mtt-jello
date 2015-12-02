@@ -1,6 +1,6 @@
 {
   "name": "mtt-jello",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "mtt jello forked from fis3 jello",
   "main": "index.js",
   "scripts": {

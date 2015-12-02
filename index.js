@@ -33,8 +33,7 @@ var exports = module.exports = function(fis) {
     .set('project.ignore', [
       'node_modules/**',
       '.idea/**',
-      '.git/**',
-      'mtt-conf.js'
+      '.git/**'
     ], weight)
 
     // 开发环境下都不加md5
@@ -162,22 +161,24 @@ var exports = module.exports = function(fis) {
       }
     }, weight);
 
+  var compress = function(fisMedia) {
+    return fisMedia.match('*.{js,jsx,es6}', {
+        optimizer: fis.plugin('uglify-js')
+      }, weight)
+
+      .match('*.{css,less}', {
+        optimizer: fis.plugin('clean-css'),
+      }, weight)
+
+      .match('*.png', {
+        optimizer: fis.plugin('png-compressor')
+      }, weight);
+  };
 
   // 在 prod 环境下，开启各种压缩和打包。
-  fis
-    .media('prod')
-
-    .match('*.{js,jsx,es6}', {
-      optimizer: fis.plugin('uglify-js')
-    }, weight)
-
-    .match('*.{css,less}', {
-      optimizer: fis.plugin('clean-css'),
-    }, weight)
-
-    .match('*.png', {
-      optimizer: fis.plugin('png-compressor')
-    }, weight);
+  compress(fis.media('prod'));
+  // 在 deploy 环境下，开启各种压缩和打包。
+  compress(fis.media('deploy'));
 
   // 当用户 fis-conf.js 加载后触发。
   fis.on('conf:loaded', function() {
